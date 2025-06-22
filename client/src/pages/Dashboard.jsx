@@ -1,56 +1,72 @@
-// src/pages/Dashboard.jsx
-import React from "react";
-import { Link } from "react-router-dom";
-
-const mockEntries = [
-  {
-    id: 1,
-    date: "2025-06-20",
-    mood: "😊",
-    content: "Today I felt really good after finishing my journal setup!",
-  },
-  {
-    id: 2,
-    date: "2025-06-19",
-    mood: "😔",
-    content: "It was a tough day, but I’m learning every day.",
-  },
-];
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function Dashboard() {
-  const today = new Date().toLocaleDateString();
+  const [entries, setEntries] = useState([]);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchEntries = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setError("No token found. Please login again.");
+        return;
+      }
+
+      try {
+        const res = await axios.get("http://localhost:5000/api/entries", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        if (Array.isArray(res.data)) {
+          setEntries(res.data);
+        } else {
+          setError("Invalid data received");
+        }
+      } catch (err) {
+        console.error("❌ Error fetching entries:", err.message);
+        setError("Failed to fetch entries");
+      }
+    };
+
+    fetchEntries();
+  }, []);
 
   return (
-    <div className="min-h-screen bg-gray-100 p-6">
-      {/* Header */}
-      <div className="mb-6 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">📓 Daily Journal</h1>
-          <p className="text-gray-500">Today: {today}</p>
-        </div>
-        <Link
-          to="/create"
-          className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+    <div className="p-6 bg-gray-50 min-h-screen">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">📒 Your Journal Entries</h1>
+        <button
+          onClick={() => navigate("/create")}
+          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
         >
-          + New Entry
-        </Link>
+          ➕ Create Entry
+        </button>
       </div>
 
-      {/* Journal Entries */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {mockEntries.map((entry) => (
-          <div
-            key={entry.id}
-            className="bg-white shadow-md rounded-lg p-4 hover:shadow-lg transition"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="text-xl">{entry.mood}</span>
-              <span className="text-sm text-gray-500">{entry.date}</span>
+      {error ? (
+        <p className="text-red-500 font-semibold">{error}</p>
+      ) : entries.length === 0 ? (
+        <p className="text-gray-500">No entries found.</p>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {entries.map((entry) => (
+            <div
+              key={entry._id}
+              className="bg-white p-4 rounded-lg shadow-md border"
+            >
+              <div className="text-2xl">{entry.mood}</div>
+              <p className="mt-2 text-gray-700">{entry.content}</p>
+              <p className="mt-1 text-sm text-gray-400">
+                {new Date(entry.date).toLocaleString()}
+              </p>
             </div>
-            <p className="text-gray-800">{entry.content}</p>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -1,91 +1,56 @@
 import React, { useState } from "react";
+import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
 export default function CreateEntry() {
+  const [form, setForm] = useState({ mood: "", content: "" });
   const navigate = useNavigate();
-  const [entry, setEntry] = useState({
-    mood: "",
-    text: "",
-  });
 
   const handleChange = (e) => {
-    setEntry({ ...entry, [e.target.name]: e.target.value });
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    const token = localStorage.getItem("token");
 
-    // TODO: Connect to backend later
-    console.log("Entry saved:", entry);
-    navigate("/dashboard");
+    try {
+      await axios.post("http://localhost:5000/api/entries", form, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      alert("Entry added!");
+      navigate("/dashboard");
+    } catch (err) {
+      alert("Failed to add entry");
+      console.log(err);
+    }
   };
-
-  const wordCount = entry.text.trim().split(/\s+/).filter(Boolean).length;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex justify-center items-center px-4 py-10">
-      <form
-        onSubmit={handleSubmit}
-        className="bg-white p-8 rounded-2xl shadow-xl w-full max-w-xl space-y-6"
-      >
-        <h2 className="text-3xl font-bold text-gray-800 text-center">
-          📝 Create New Entry
-        </h2>
-
-        {/* Mood Selector */}
-        <div>
-          <label className="block text-gray-600 mb-1 font-medium">Mood</label>
-          <select
-            name="mood"
-            value={entry.mood}
-            onChange={handleChange}
-            required
-            className="w-full border p-2 rounded-md focus:ring-2 focus:ring-blue-500"
-          >
-            <option value="">Select mood</option>
-            <option value="😊">😊 Happy</option>
-            <option value="😢">😢 Sad</option>
-            <option value="😡">😡 Angry</option>
-            <option value="😌">😌 Relaxed</option>
-            <option value="😴">😴 Tired</option>
-          </select>
-        </div>
-
-        {/* Journal Text */}
-        <div>
-          <label className="block text-gray-600 mb-1 font-medium">
-            Your Thoughts
-          </label>
-          <textarea
-            name="text"
-            rows="6"
-            value={entry.text}
-            onChange={handleChange}
-            placeholder="Write about your day..."
-            required
-            className="w-full border p-3 rounded-md resize-none focus:ring-2 focus:ring-blue-500"
-          ></textarea>
-          <p className="text-right text-sm text-gray-500 mt-1">
-            Word Count: {wordCount}
-          </p>
-        </div>
-
-        {/* Buttons */}
-        <div className="flex justify-between items-center">
-          <button
-            type="button"
-            onClick={() => navigate("/dashboard")}
-            className="bg-gray-200 text-gray-700 px-4 py-2 rounded hover:bg-gray-300"
-          >
-            ← Back
-          </button>
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700"
-          >
-            Save Entry
-          </button>
-        </div>
+    <div className="p-6">
+      <h2 className="text-2xl font-bold mb-4">✍️ Create Journal Entry</h2>
+      <form onSubmit={handleSubmit} className="space-y-4 max-w-md">
+        <input
+          type="text"
+          name="mood"
+          placeholder="Mood (e.g., 😊)"
+          value={form.mood}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <textarea
+          name="content"
+          placeholder="Write your thoughts..."
+          value={form.content}
+          onChange={handleChange}
+          className="w-full p-2 border rounded"
+        />
+        <button
+          type="submit"
+          className="bg-blue-600 text-white px-4 py-2 rounded"
+        >
+          Save Entry
+        </button>
       </form>
     </div>
   );
