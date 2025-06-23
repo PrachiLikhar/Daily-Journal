@@ -16,7 +16,8 @@ export default function Login() {
     try {
       // Later replace this with real API
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        // "http://localhost:5000/api/auth/login",
+        "https://dailyjournal-seven.vercel.app/api/auth/login",
         form
       );
       localStorage.setItem("token", res.data.token);

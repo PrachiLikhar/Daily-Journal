@@ -26,9 +26,12 @@ export default function Dashboard() {
 
   const fetchEntries = async () => {
     const token = localStorage.getItem("token");
-    const res = await axios.get("http://localhost:5000/api/entries", {
-      headers: { Authorization: token },
-    });
+    const res = await axios.get(
+      "https://dailyjournal-seven.vercel.app//api/entries",
+      {
+        headers: { Authorization: token },
+      }
+    );
     setEntries(res.data);
   };
 
@@ -43,9 +46,13 @@ export default function Dashboard() {
   const handleNewSubmit = async (e) => {
     e.preventDefault();
     const token = localStorage.getItem("token");
-    await axios.post("http://localhost:5000/api/entries", newEntry, {
-      headers: { Authorization: token },
-    });
+    await axios.post(
+      "https://dailyjournal-seven.vercel.app/api/entries",
+      newEntry,
+      {
+        headers: { Authorization: token },
+      }
+    );
     setNewEntry({ title: "", content: "", mood: "", category: "" });
     setShowForm(false);
     fetchEntries();
@@ -53,9 +60,12 @@ export default function Dashboard() {
 
   const handleDelete = async (id) => {
     const token = localStorage.getItem("token");
-    await axios.delete(`http://localhost:5000/api/entries/${id}`, {
-      headers: { Authorization: token },
-    });
+    await axios.delete(
+      `https://dailyjournal-seven.vercel.app/api/entries/${id}`,
+      {
+        headers: { Authorization: token },
+      }
+    );
     fetchEntries();
   };
 
@@ -75,9 +85,13 @@ export default function Dashboard() {
 
   const submitEdit = async (id) => {
     const token = localStorage.getItem("token");
-    await axios.put(`http://localhost:5000/api/entries/${id}`, editForm, {
-      headers: { Authorization: token },
-    });
+    await axios.put(
+      `https://dailyjournal-seven.vercel.app/api/entries/${id}`,
+      editForm,
+      {
+        headers: { Authorization: token },
+      }
+    );
     setEditingEntryId(null);
     fetchEntries();
   };
