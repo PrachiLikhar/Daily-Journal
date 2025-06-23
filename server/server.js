@@ -15,11 +15,11 @@ app.use(express.json());
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
-const journalRoutes = require('./routes/journalRoutes');
+const entryRoutes = require('./routes/entryRoutes');
 
 // Use routes
 app.use('/api/auth', authRoutes);
-app.use('/api/entries', journalRoutes);
+app.use('/api/entries', entryRoutes);
 
 // Connect to MongoDB
 mongoose.connect(process.env.MONGO_URI, {

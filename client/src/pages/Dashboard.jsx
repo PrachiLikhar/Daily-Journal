@@ -1,72 +1,140 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import EntryForm from "../components/EntryForm";
+import EntryItem from "../components/EntryItem";
+import EntryFilters from "../components/EntryFilters";
 
 export default function Dashboard() {
   const [entries, setEntries] = useState([]);
-  const [error, setError] = useState("");
-  const navigate = useNavigate();
+  const [editingEntryId, setEditingEntryId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    content: "",
+    mood: "",
+    category: "",
+  });
+  const [newEntry, setNewEntry] = useState({
+    title: "",
+    content: "",
+    mood: "",
+    category: "",
+  });
+  const [showForm, setShowForm] = useState(false);
+  const [filterMood, setFilterMood] = useState("");
+  const [filterCategory, setFilterCategory] = useState("");
+  const [filterDate, setFilterDate] = useState("");
+
+  const fetchEntries = async () => {
+    const token = localStorage.getItem("token");
+    const res = await axios.get("http://localhost:5000/api/entries", {
+      headers: { Authorization: token },
+    });
+    setEntries(res.data);
+  };
 
   useEffect(() => {
-    const fetchEntries = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setError("No token found. Please login again.");
-        return;
-      }
-
-      try {
-        const res = await axios.get("http://localhost:5000/api/entries", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-        if (Array.isArray(res.data)) {
-          setEntries(res.data);
-        } else {
-          setError("Invalid data received");
-        }
-      } catch (err) {
-        console.error("❌ Error fetching entries:", err.message);
-        setError("Failed to fetch entries");
-      }
-    };
-
     fetchEntries();
   }, []);
 
-  return (
-    <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-3xl font-bold">📒 Your Journal Entries</h1>
-        <button
-          onClick={() => navigate("/create")}
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          ➕ Create Entry
-        </button>
-      </div>
+  const handleNewChange = (e) => {
+    setNewEntry({ ...newEntry, [e.target.name]: e.target.value });
+  };
 
-      {error ? (
-        <p className="text-red-500 font-semibold">{error}</p>
-      ) : entries.length === 0 ? (
-        <p className="text-gray-500">No entries found.</p>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {entries.map((entry) => (
-            <div
-              key={entry._id}
-              className="bg-white p-4 rounded-lg shadow-md border"
-            >
-              <div className="text-2xl">{entry.mood}</div>
-              <p className="mt-2 text-gray-700">{entry.content}</p>
-              <p className="mt-1 text-sm text-gray-400">
-                {new Date(entry.date).toLocaleString()}
-              </p>
-            </div>
-          ))}
-        </div>
+  const handleNewSubmit = async (e) => {
+    e.preventDefault();
+    const token = localStorage.getItem("token");
+    await axios.post("http://localhost:5000/api/entries", newEntry, {
+      headers: { Authorization: token },
+    });
+    setNewEntry({ title: "", content: "", mood: "", category: "" });
+    setShowForm(false);
+    fetchEntries();
+  };
+
+  const handleDelete = async (id) => {
+    const token = localStorage.getItem("token");
+    await axios.delete(`http://localhost:5000/api/entries/${id}`, {
+      headers: { Authorization: token },
+    });
+    fetchEntries();
+  };
+
+  const startEdit = (entry) => {
+    setEditingEntryId(entry._id);
+    setEditForm({
+      title: entry.title,
+      content: entry.content,
+      mood: entry.mood,
+      category: entry.category,
+    });
+  };
+
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+
+  const submitEdit = async (id) => {
+    const token = localStorage.getItem("token");
+    await axios.put(`http://localhost:5000/api/entries/${id}`, editForm, {
+      headers: { Authorization: token },
+    });
+    setEditingEntryId(null);
+    fetchEntries();
+  };
+
+  return (
+    <div className="p-4 max-w-4xl mx-auto">
+      <h2 className="text-3xl font-bold mb-4">📓 Your Journal Dashboard</h2>
+
+      <EntryFilters
+        filterMood={filterMood}
+        setFilterMood={setFilterMood}
+        filterCategory={filterCategory}
+        setFilterCategory={setFilterCategory}
+        filterDate={filterDate}
+        setFilterDate={setFilterDate}
+      />
+
+      <button
+        onClick={() => setShowForm(!showForm)}
+        className="mb-6 bg-blue-600 text-white px-4 py-2 rounded"
+      >
+        {showForm ? "Close Entry Form" : "Write New Entry"}
+      </button>
+
+      {showForm && (
+        <EntryForm
+          formData={newEntry}
+          onChange={handleNewChange}
+          onSubmit={handleNewSubmit}
+        />
       )}
+
+      {entries
+        .filter((entry) => {
+          const matchesMood =
+            filterMood === "" || entry.mood.toLowerCase() === filterMood;
+          const matchesCategory =
+            filterCategory === "" ||
+            entry.category.toLowerCase() === filterCategory;
+          const matchesDate =
+            filterDate === "" ||
+            new Date(entry.date).toISOString().split("T")[0] === filterDate;
+          return matchesMood && matchesCategory && matchesDate;
+        })
+        .map((entry) => (
+          <EntryItem
+            key={entry._id}
+            entry={entry}
+            isEditing={editingEntryId === entry._id}
+            editForm={editForm}
+            onEditChange={handleEditChange}
+            onStartEdit={startEdit}
+            onSubmitEdit={submitEdit}
+            onCancelEdit={() => setEditingEntryId(null)}
+            onDelete={handleDelete}
+          />
+        ))}
     </div>
   );
 }
